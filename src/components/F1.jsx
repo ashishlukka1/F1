@@ -149,12 +149,12 @@ export default function F1StreamFullScreen() {
       
       {/* Fullscreen button */}
       <div className="position-absolute bottom-0 end-0 m-3" style={{ zIndex: 20 }}>
-        <button 
+        {/* <button 
           onClick={handleFullScreen}
           className="btn btn-danger shadow"
         >
           Enter Fullscreen
-        </button>
+        </button> */}
       </div>
     </div>
   );
