@@ -1,161 +1,141 @@
-import React, { useState, useEffect, useRef } from 'react';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import React, { useState, useRef } from 'react';
 
-export default function F1StreamFullScreen() {
+const F1StreamComponent = () => {
   const [isLoading, setIsLoading] = useState(true);
+  const [showOverlay, setShowOverlay] = useState(true);
   const iframeRef = useRef(null);
-  
-  useEffect(() => {
-    // Set a timeout to hide the loading indicator after a few seconds
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
-    
-    // Handle fullscreen mode
-    const handleFullScreen = () => {
-      const element = document.documentElement;
-      
-      if (element.requestFullscreen) {
-        element.requestFullscreen();
-      } else if (element.mozRequestFullScreen) {
-        element.mozRequestFullScreen();
-      } else if (element.webkitRequestFullscreen) {
-        element.webkitRequestFullscreen();
-      } else if (element.msRequestFullscreen) {
-        element.msRequestFullscreen();
-      }
-    };
-    
-    // Attempt to go fullscreen after a brief delay
-    const fullscreenTimer = setTimeout(() => {
-      handleFullScreen();
-    }, 500);
-    
-    // Block popup ads
-    const blockPopups = () => {
-      if (iframeRef.current) {
-        try {
-          // This will execute when the iframe is loaded
-          iframeRef.current.onload = () => {
-            try {
-              const iframeDocument = iframeRef.current.contentDocument || iframeRef.current.contentWindow.document;
-              
-              // Create and inject CSS to hide ads
-              const styleEl = iframeDocument.createElement('style');
-              styleEl.textContent = `
-                /* Hide common ad elements */
-                [class*="ad-"], [class*="Ad-"], [class*="advertisement"], [id*="ad-"], [id*="Ad-"],
-                [class*="popup"], [id*="popup"], [class*="overlay"], [id*="overlay"],
-                iframe:not([src*="f1"]), div[style*="position: fixed"],
-                a[target="_blank"], div[class*="modal"], div[id*="modal"] {
-                  display: none !important;
-                  opacity: 0 !important;
-                  pointer-events: none !important;
-                  visibility: hidden !important;
-                }
-                
-                /* Prevent new windows and popups */
-                body {
-                  overflow: hidden !important;
-                }
-              `;
-              
-              // Add the style element to the iframe document
-              iframeDocument.head.appendChild(styleEl);
-              
-              // Observe DOM changes to remove ads dynamically
-              const observer = new MutationObserver((mutations) => {
-                const adElements = iframeDocument.querySelectorAll('[class*="ad-"], [id*="ad-"], [class*="popup"], [id*="popup"]');
-                adElements.forEach(el => {
-                  el.style.display = 'none';
-                  el.style.opacity = '0';
-                  el.style.visibility = 'hidden';
-                  el.style.pointerEvents = 'none';
-                });
-              });
-              
-              // Start observing the iframe document body
-              observer.observe(iframeDocument.body, {
-                childList: true,
-                subtree: true
-              });
-            } catch (error) {
-              console.log("Cannot access iframe content due to same-origin policy");
-            }
-          };
-        } catch (error) {
-          console.log("Error setting up ad blocking:", error);
-        }
-      }
-    };
-    
-    // Set up ad blocking
-    blockPopups();
-    
-    // Clean up timers on unmount
-    return () => {
-      clearTimeout(timer);
-      clearTimeout(fullscreenTimer);
-    };
-  }, []);
 
-  const handleFullScreen = () => {
-    const element = document.documentElement;
-    if (element.requestFullscreen) {
-      element.requestFullscreen();
-    } else if (element.mozRequestFullScreen) {
-      element.mozRequestFullScreen();
-    } else if (element.webkitRequestFullscreen) {
-      element.webkitRequestFullscreen();
-    } else if (element.msRequestFullscreen) {
-      element.msRequestFullscreen();
+  const handleLoad = () => {
+    setIsLoading(false);
+  };
+
+  const handleOverlayClick = () => {
+    setShowOverlay(false);
+  };
+
+  const refreshStream = () => {
+    setIsLoading(true);
+    setShowOverlay(true);
+    if (iframeRef.current) {
+      iframeRef.current.src = iframeRef.current.src;
     }
   };
-  
+
   return (
-    <div className="position-relative bg-dark vh-100 overflow-hidden">
-      {/* Loading overlay */}
-      {isLoading && (
-        <div className="position-absolute top-0 start-0 end-0 bottom-0 d-flex align-items-center justify-content-center bg-dark" style={{ zIndex: 10 }}>
-          <div className="text-center">
-            <div className="spinner-border text-danger" role="status" style={{ width: '3rem', height: '3rem' }}>
-              <span className="visually-hidden">Loading...</span>
-            </div>
-            <p className="mt-3 text-white fs-4">Loading F1 Stream...</p>
-          </div>
-        </div>
-      )}
-      
-      {/* Streaming iframe with sandbox attributes to limit certain behaviors */}
-      <iframe 
-        ref={iframeRef}
-        src="https://flstv.online//embed/f1.php" 
-        className="position-absolute top-0 start-0 w-100 h-100 border-0"
-        allowFullScreen={true}
-        title="F1 Live Stream"
-        sandbox="allow-scripts allow-same-origin allow-forms"
-        scrolling="no"
+    <>
+      <link 
+        href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" 
+        rel="stylesheet" 
       />
       
-      {/* Transparent overlay to prevent click-jacking */}
-      <div 
-        className="position-absolute top-0 start-0 w-100 h-100" 
-        style={{ 
-          zIndex: 5, 
-          pointerEvents: 'none',
-          background: 'transparent'
-        }}
-      ></div>
-      
-      {/* Fullscreen button */}
-      <div className="position-absolute bottom-0 end-0 m-3" style={{ zIndex: 20 }}>
-        {/* <button 
-          onClick={handleFullScreen}
-          className="btn btn-danger shadow"
-        >
-          Enter Fullscreen
-        </button> */}
+      <div className="vh-100 bg-black d-flex flex-column">
+        {/* Simple Control Bar */}
+        <div className="d-flex justify-content-between align-items-center px-3 py-2" style={{backgroundColor: '#1a1a1a'}}>
+          <div className="d-flex align-items-center">
+            <span className="badge bg-danger me-2 pulse">LIVE</span>
+            <small className="text-white">F1 Stream</small>
+          </div>
+          <button 
+            className="btn btn-sm btn-outline-secondary"
+            onClick={refreshStream}
+            title="Refresh Stream"
+          >
+            ↻
+          </button>
+        </div>
+
+        {/* Stream Container with Protection */}
+        <div className="flex-grow-1 position-relative overflow-hidden">
+          {/* Loading Indicator */}
+          {isLoading && (
+            <div className="position-absolute top-50 start-50 translate-middle text-white z-3">
+              <div className="spinner-border text-danger mb-2" role="status"></div>
+              <div>Loading stream...</div>
+            </div>
+          )}
+
+          {/* Click Protection Overlay */}
+          {showOverlay && !isLoading && (
+            <div 
+              className="position-absolute w-100 h-100 d-flex align-items-center justify-content-center z-2"
+              style={{
+                backgroundColor: 'rgba(0,0,0,0.8)',
+                cursor: 'pointer'
+              }}
+              onClick={handleOverlayClick}
+            >
+              <div className="text-center text-white">
+                <div className="fs-1 mb-3">▶</div>
+                <div>Click to start stream</div>
+                <small className="text-muted d-block mt-2">
+                  (This prevents accidental ad clicks)
+                </small>
+              </div>
+            </div>
+          )}
+          
+          {/* Stream Iframe */}
+          <iframe 
+            ref={iframeRef}
+            src="https://givemereddit.org/f1/formula1.html"
+            frameBorder="0"
+            width="100%"
+            height="100%"
+            allowFullScreen
+            scrolling="no"
+            allowTransparency
+            onLoad={handleLoad}
+            sandbox="allow-scripts allow-same-origin allow-presentation"
+            style={{
+              display: 'block',
+              border: 'none',
+              backgroundColor: '#000',
+              pointerEvents: showOverlay ? 'none' : 'auto'
+            }}
+            title="F1 Live Stream"
+          />
+        </div>
+
+        {/* Status Bar */}
+        <div className="px-3 py-1" style={{backgroundColor: '#1a1a1a'}}>
+          <div className="d-flex justify-content-between align-items-center">
+            <small className="text-success">
+              ● Stream Active
+            </small>
+            <small className="text-muted">
+              Click overlay protects from ads
+            </small>
+          </div>
+        </div>
       </div>
-    </div>
+
+      <style jsx>{`
+        .pulse {
+          animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+          0% { opacity: 1; }
+          50% { opacity: 0.6; }
+          100% { opacity: 1; }
+        }
+        
+        .btn-outline-secondary:hover {
+          background-color: rgba(108, 117, 125, 0.2);
+        }
+        
+        .spinner-border {
+          width: 2rem;
+          height: 2rem;
+        }
+        
+        /* Prevent text selection on overlay */
+        .position-absolute {
+          user-select: none;
+        }
+      `}</style>
+    </>
   );
-}
+};
+
+export default F1StreamComponent;
